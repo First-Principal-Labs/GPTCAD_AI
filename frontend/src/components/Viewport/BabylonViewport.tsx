@@ -17,6 +17,9 @@ import {
   AbstractMesh,
   Mesh,
   DynamicTexture,
+  Animation,
+  CubicEase,
+  EasingFunction,
 } from '@babylonjs/core';
 import '@babylonjs/loaders/glTF';
 import { useAppStore } from '../../stores/appStore';
@@ -30,6 +33,42 @@ function hexToColor3(hex: string): Color3 {
   return Color3.FromHexString(hex);
 }
 
+// Camera angles for each axis view (alpha, beta)
+// Babylon ArcRotateCamera: alpha = longitude, beta = latitude (0 = top, PI = bottom)
+const AXIS_VIEWS: Record<string, { alpha: number; beta: number }> = {
+  X:    { alpha: 0,              beta: Math.PI / 2 },     // +X: right
+  negX: { alpha: Math.PI,       beta: Math.PI / 2 },     // -X: left
+  Y:    { alpha: -Math.PI / 2,  beta: 0.01 },            // +Y: top
+  negY: { alpha: -Math.PI / 2,  beta: Math.PI - 0.01 },  // -Y: bottom
+  Z:    { alpha: -Math.PI / 2,  beta: Math.PI / 2 },     // +Z: front
+  negZ: { alpha: Math.PI / 2,   beta: Math.PI / 2 },     // -Z: back
+};
+
+function animateCameraTo(camera: ArcRotateCamera, alpha: number, beta: number) {
+  const fps = 60;
+  const frames = 20;
+
+  const alphaAnim = new Animation('alphaAnim', 'alpha', fps, Animation.ANIMATIONTYPE_FLOAT);
+  alphaAnim.setKeys([
+    { frame: 0, value: camera.alpha },
+    { frame: frames, value: alpha },
+  ]);
+
+  const betaAnim = new Animation('betaAnim', 'beta', fps, Animation.ANIMATIONTYPE_FLOAT);
+  betaAnim.setKeys([
+    { frame: 0, value: camera.beta },
+    { frame: frames, value: beta },
+  ]);
+
+  const ease = new CubicEase();
+  ease.setEasingMode(EasingFunction.EASINGMODE_EASEINOUT);
+  alphaAnim.setEasingFunction(ease);
+  betaAnim.setEasingFunction(ease);
+
+  camera.animations = [alphaAnim, betaAnim];
+  camera.getScene().beginAnimation(camera, 0, frames, false);
+}
+
 function createAxisGizmo(canvas: HTMLCanvasElement, mainCamera: ArcRotateCamera) {
   const engine = new Engine(canvas, true, { antialias: true, alpha: true });
   const scene = new Scene(engine);
@@ -38,11 +77,11 @@ function createAxisGizmo(canvas: HTMLCanvasElement, mainCamera: ArcRotateCamera)
 
   const camera = new ArcRotateCamera('gizmoCam', 0, 0, 4, Vector3.Zero(), scene);
   camera.mode = ArcRotateCamera.ORTHOGRAPHIC_CAMERA;
-  const size = 1.6;
-  camera.orthoLeft = -size;
-  camera.orthoRight = size;
-  camera.orthoTop = size;
-  camera.orthoBottom = -size;
+  const orthoSize = 1.6;
+  camera.orthoLeft = -orthoSize;
+  camera.orthoRight = orthoSize;
+  camera.orthoTop = orthoSize;
+  camera.orthoBottom = -orthoSize;
 
   const light = new HemisphericLight('gizmoLight', new Vector3(0, 1, 0), scene);
   light.intensity = 1.0;
@@ -57,8 +96,11 @@ function createAxisGizmo(canvas: HTMLCanvasElement, mainCamera: ArcRotateCamera)
     { label: 'Z', dir: new Vector3(0, 0, 1), color: '#3b82f6', negColor: '#1e3a5f' },
   ];
 
+  // Store sphere materials for hover highlighting
+  const sphereMaterials: Map<string, { mat: StandardMaterial; baseEmissive: Color3 }> = new Map();
+
   axes.forEach(({ label, dir, color, negColor }) => {
-    // Axis line
+    // Axis line (not pickable)
     const line = MeshBuilder.CreateTube(`axis_${label}`, {
       path: [Vector3.Zero(), dir.scale(axisLen)],
       radius: 0.03,
@@ -68,15 +110,14 @@ function createAxisGizmo(canvas: HTMLCanvasElement, mainCamera: ArcRotateCamera)
     lineMat.diffuseColor = Color3.FromHexString(color);
     lineMat.emissiveColor = Color3.FromHexString(color).scale(0.4);
     line.material = lineMat;
+    line.isPickable = false;
 
-    // Positive sphere with label
+    // Positive sphere with label (pickable)
     const sphere = MeshBuilder.CreateSphere(`sphere_${label}`, { diameter: sphereR * 2, segments: 16 }, scene);
     sphere.position = dir.scale(axisLen + sphereR + 0.05);
     const sphereMat = new StandardMaterial(`sphereMat_${label}`, scene);
     sphereMat.diffuseColor = Color3.FromHexString(color);
     sphereMat.emissiveColor = Color3.FromHexString(color).scale(0.3);
-
-    // Dynamic texture for label
     const tex = new DynamicTexture(`tex_${label}`, { width: 64, height: 64 }, scene, false);
     tex.hasAlpha = true;
     const ctx = tex.getContext();
@@ -89,22 +130,72 @@ function createAxisGizmo(canvas: HTMLCanvasElement, mainCamera: ArcRotateCamera)
     tex.update();
     sphereMat.diffuseTexture = tex;
     sphere.material = sphereMat;
+    sphere.isPickable = true;
+    sphereMaterials.set(`sphere_${label}`, { mat: sphereMat, baseEmissive: Color3.FromHexString(color).scale(0.3) });
 
-    // Negative sphere (small, dark)
+    // Negative sphere (pickable)
     const negSphere = MeshBuilder.CreateSphere(`negSphere_${label}`, { diameter: negSphereR * 2, segments: 12 }, scene);
     negSphere.position = dir.scale(-(axisLen * 0.5));
     const negMat = new StandardMaterial(`negMat_${label}`, scene);
     negMat.diffuseColor = Color3.FromHexString(negColor);
     negMat.emissiveColor = Color3.FromHexString(negColor).scale(0.2);
     negSphere.material = negMat;
+    negSphere.isPickable = true;
+    sphereMaterials.set(`negSphere_${label}`, { mat: negMat, baseEmissive: Color3.FromHexString(negColor).scale(0.2) });
   });
 
-  // Center sphere
-  const center = MeshBuilder.CreateSphere('center', { diameter: 0.14, segments: 12 }, scene);
+  // Center sphere (not pickable)
+  const centerMesh = MeshBuilder.CreateSphere('center', { diameter: 0.14, segments: 12 }, scene);
   const centerMat = new StandardMaterial('centerMat', scene);
   centerMat.diffuseColor = Color3.FromHexString('#14532d');
   centerMat.emissiveColor = Color3.FromHexString('#14532d').scale(0.3);
-  center.material = centerMat;
+  centerMesh.material = centerMat;
+  centerMesh.isPickable = false;
+
+  // Click handler — snap main camera to axis view
+  scene.onPointerDown = (_evt, pickResult) => {
+    if (!pickResult?.hit || !pickResult.pickedMesh) return;
+    const name = pickResult.pickedMesh.name;
+
+    let viewKey: string | null = null;
+    if (name === 'sphere_X') viewKey = 'X';
+    else if (name === 'sphere_Y') viewKey = 'Y';
+    else if (name === 'sphere_Z') viewKey = 'Z';
+    else if (name === 'negSphere_X') viewKey = 'negX';
+    else if (name === 'negSphere_Y') viewKey = 'negY';
+    else if (name === 'negSphere_Z') viewKey = 'negZ';
+
+    if (viewKey && AXIS_VIEWS[viewKey]) {
+      const { alpha, beta } = AXIS_VIEWS[viewKey];
+      animateCameraTo(mainCamera, alpha, beta);
+    }
+  };
+
+  // Hover highlight
+  let lastHovered: string | null = null;
+  scene.onPointerMove = (_evt, pickResult) => {
+    // Reset previous hover
+    if (lastHovered) {
+      const entry = sphereMaterials.get(lastHovered);
+      if (entry) entry.mat.emissiveColor = entry.baseEmissive;
+      lastHovered = null;
+    }
+
+    if (!pickResult?.hit || !pickResult.pickedMesh) {
+      canvas.style.cursor = 'default';
+      return;
+    }
+
+    const name = pickResult.pickedMesh.name;
+    const entry = sphereMaterials.get(name);
+    if (entry) {
+      entry.mat.emissiveColor = entry.baseEmissive.scale(3);
+      lastHovered = name;
+      canvas.style.cursor = 'pointer';
+    } else {
+      canvas.style.cursor = 'default';
+    }
+  };
 
   // Sync rotation and render
   engine.runRenderLoop(() => {
@@ -497,7 +588,7 @@ export default function BabylonViewport() {
         ref={gizmoCanvasRef}
         width={128}
         height={128}
-        className="absolute outline-none pointer-events-none"
+        className="absolute outline-none"
         style={{ top: 8, right: 8, width: 128, height: 128 }}
       />
     </div>

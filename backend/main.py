@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
 from backend.config import settings
-from backend.routers import generate, iterate, manual, code_run, projects
+from backend.routers import generate, iterate, manual, code_run, projects, export
 
 app = FastAPI(title="GPTCAD", version="0.1.0")
 
@@ -27,6 +27,7 @@ app.include_router(iterate.router)
 app.include_router(manual.router)
 app.include_router(code_run.router)
 app.include_router(projects.router)
+app.include_router(export.router)
 
 
 @app.get("/api/health")

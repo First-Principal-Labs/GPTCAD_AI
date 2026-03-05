@@ -26,8 +26,8 @@ try:
     # Tessellate using MeshPart for better quality
     mesh_data = MeshPart.meshFromShape(
         Shape=shape,
-        LinearDeflection=0.1,
-        AngularDeflection=0.5,
+        LinearDeflection=0.01,
+        AngularDeflection=0.1,
         Relative=False
     )
     mesh_data.write(r"{stl_path}")
@@ -67,6 +67,11 @@ except Exception as e:
     # Convert STL to GLB using trimesh
     import trimesh
     mesh = trimesh.load(str(stl_path))
+
+    # Merge duplicate vertices so GLB gets smooth vertex normals
+    # instead of flat per-face normals from STL triangle soup
+    mesh.merge_vertices()
+
     mesh.export(str(output_path), file_type="glb")
 
     # Cleanup intermediate files

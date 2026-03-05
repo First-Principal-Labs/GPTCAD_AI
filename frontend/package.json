@@ -10,6 +10,9 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@babylonjs/core": "^8.54.0",
+    "@babylonjs/loaders": "^8.54.0",
+    "@babylonjs/materials": "^8.54.0",
     "@monaco-editor/react": "^4.7.0",
     "@react-three/drei": "^10.7.7",
     "@react-three/fiber": "^9.5.0",

@@ -38,6 +38,10 @@ interface AppState {
   visualStyle: 'cad' | 'studio';
   setVisualStyle: (style: 'cad' | 'studio') => void;
 
+  // Render engine
+  renderEngine: 'threejs' | 'babylonjs';
+  setRenderEngine: (engine: 'threejs' | 'babylonjs') => void;
+
   // UI state
   isGenerating: boolean;
   setGenerating: (v: boolean) => void;
@@ -85,6 +89,9 @@ export const useAppStore = create<AppState>((set) => ({
 
   visualStyle: 'cad',
   setVisualStyle: (style) => set({ visualStyle: style }),
+
+  renderEngine: 'threejs',
+  setRenderEngine: (engine) => set({ renderEngine: engine }),
 
   isGenerating: false,
   setGenerating: (v) => set({ isGenerating: v }),

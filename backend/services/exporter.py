@@ -26,12 +26,21 @@ try:
         script += f'''
     import MeshPart, Mesh
     try:
+        solids = shape.Solids if shape.Solids else [shape]
         mesh_data = MeshPart.meshFromShape(
-            Shape=shape,
+            Shape=solids[0],
             LinearDeflection=0.01,
             AngularDeflection=0.1,
             Relative=False
         )
+        for solid in solids[1:]:
+            extra = MeshPart.meshFromShape(
+                Shape=solid,
+                LinearDeflection=0.01,
+                AngularDeflection=0.1,
+                Relative=False
+            )
+            mesh_data.addMesh(extra)
         mesh_data.write(r"{output_path}")
     except Exception:
         doc = FreeCAD.newDocument("Export")
@@ -44,12 +53,21 @@ try:
         script += f'''
     import MeshPart, Mesh
     try:
+        solids = shape.Solids if shape.Solids else [shape]
         mesh_data = MeshPart.meshFromShape(
-            Shape=shape,
+            Shape=solids[0],
             LinearDeflection=0.01,
             AngularDeflection=0.1,
             Relative=False
         )
+        for solid in solids[1:]:
+            extra = MeshPart.meshFromShape(
+                Shape=solid,
+                LinearDeflection=0.01,
+                AngularDeflection=0.1,
+                Relative=False
+            )
+            mesh_data.addMesh(extra)
         mesh_data.write(r"{output_path}")
     except Exception:
         doc = FreeCAD.newDocument("Export")

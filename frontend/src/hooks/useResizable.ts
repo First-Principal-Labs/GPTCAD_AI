@@ -2,11 +2,28 @@ import { useCallback, useRef, useState } from 'react';
 
 export function useResizable(initialWidth: number, min: number, max: number, direction: 'left' | 'right') {
   const [width, setWidth] = useState(initialWidth);
+  const [collapsed, setCollapsed] = useState(false);
   const dragging = useRef(false);
   const startX = useRef(0);
   const startWidth = useRef(0);
+  const prevWidth = useRef(initialWidth);
+
+  const toggle = useCallback(() => {
+    setCollapsed((prev) => {
+      if (prev) {
+        // Expanding: restore previous width
+        setWidth(prevWidth.current);
+      } else {
+        // Collapsing: save current width
+        prevWidth.current = width;
+        setWidth(0);
+      }
+      return !prev;
+    });
+  }, [width]);
 
   const onMouseDown = useCallback((e: React.MouseEvent) => {
+    if (collapsed) return;
     dragging.current = true;
     startX.current = e.clientX;
     startWidth.current = width;
@@ -32,7 +49,11 @@ export function useResizable(initialWidth: number, min: number, max: number, dir
 
     document.addEventListener('mousemove', onMouseMove);
     document.addEventListener('mouseup', onMouseUp);
-  }, [width, min, max, direction]);
+  }, [width, min, max, direction, collapsed]);
 
-  return { width, onMouseDown };
+  const onDoubleClick = useCallback(() => {
+    toggle();
+  }, [toggle]);
+
+  return { width: collapsed ? 0 : width, collapsed, toggle, onMouseDown, onDoubleClick };
 }

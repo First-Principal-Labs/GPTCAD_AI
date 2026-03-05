@@ -1,6 +1,6 @@
 import Editor, { DiffEditor } from '@monaco-editor/react';
 import {
-  Code2, Copy, Check, Play, Pencil, Eye, GitCompareArrows, Loader2,
+  Code2, Copy, Check, Play, Pencil, Eye, GitCompareArrows, Loader2, PanelLeftClose,
 } from 'lucide-react';
 import { useState } from 'react';
 import { useAppStore } from '../../stores/appStore';
@@ -8,7 +8,7 @@ import { runCode } from '../../api/client';
 
 type ViewMode = 'view' | 'edit' | 'diff';
 
-export default function CodePanel() {
+export default function CodePanel({ onCollapse }: { onCollapse?: () => void }) {
   const code = useAppStore((s) => s.code);
   const previousCode = useAppStore((s) => s.previousCode);
   const projectId = useAppStore((s) => s.projectId);
@@ -81,6 +81,15 @@ export default function CodePanel() {
       {/* Header */}
       <div className="h-9 flex items-center justify-between px-3 border-b border-border shrink-0">
         <div className="flex items-center gap-1.5">
+          {onCollapse && (
+            <button
+              onClick={onCollapse}
+              className="p-0.5 rounded hover:bg-bg-elevated text-text-muted hover:text-text-primary transition-colors"
+              title="Collapse panel"
+            >
+              <PanelLeftClose size={13} />
+            </button>
+          )}
           <Code2 size={13} className="text-text-muted" />
           <span className="text-xs font-medium text-text-secondary uppercase tracking-wider">
             {viewMode === 'edit' ? 'Edit Code' : viewMode === 'diff' ? 'Diff View' : 'Generated Code'}

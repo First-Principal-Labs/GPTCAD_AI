@@ -30,7 +30,7 @@ class ChatCADWorkbench:
 
     MenuText = "CHATCAD"
     ToolTip = "Generate CAD models from natural language using AI"
-    Icon = _find_icon()
+    Icon = ""
 
     def Initialize(self):
         """Called when the workbench is first activated."""
@@ -55,4 +55,7 @@ class ChatCADWorkbench:
         return "Gui::PythonWorkbench"
 
 
+# Set Icon AFTER class definition — inside class bodies, Python only searches
+# the class namespace + globals, skipping exec() locals where our functions live.
+ChatCADWorkbench.Icon = _find_icon()
 FreeCADGui.addWorkbench(ChatCADWorkbench())

@@ -1,17 +1,55 @@
 import json
+import shutil
 import uuid
+from datetime import datetime, timezone
 from pathlib import Path
 
 from backend.config import settings
 
 
-def create_project(project_id: str | None = None) -> tuple[str, Path]:
+def _project_meta_path(project_id: str) -> Path:
+    return settings.STORAGE_DIR / project_id / "project.json"
+
+
+def _read_project_meta(project_id: str) -> dict | None:
+    meta_path = _project_meta_path(project_id)
+    if meta_path.exists():
+        return json.loads(meta_path.read_text())
+    return None
+
+
+def _write_project_meta(project_id: str, meta: dict) -> None:
+    meta_path = _project_meta_path(project_id)
+    meta_path.parent.mkdir(parents=True, exist_ok=True)
+    meta_path.write_text(json.dumps(meta))
+
+
+def _touch_project(project_id: str) -> None:
+    """Update the updated_at timestamp for a project."""
+    meta = _read_project_meta(project_id)
+    if meta:
+        meta["updated_at"] = datetime.now(timezone.utc).isoformat()
+        _write_project_meta(project_id, meta)
+
+
+def create_project(project_id: str | None = None, name: str | None = None) -> tuple[str, Path]:
     """Create a new project directory and return (project_id, project_dir)."""
     if not project_id:
         project_id = uuid.uuid4().hex[:12]
 
     project_dir = settings.STORAGE_DIR / project_id
     project_dir.mkdir(parents=True, exist_ok=True)
+
+    # Initialize project metadata if it doesn't exist
+    if not _project_meta_path(project_id).exists():
+        now = datetime.now(timezone.utc).isoformat()
+        _write_project_meta(project_id, {
+            "id": project_id,
+            "name": name or "Untitled Project",
+            "created_at": now,
+            "updated_at": now,
+        })
+
     return project_id, project_dir
 
 
@@ -50,6 +88,9 @@ def save_version(project_id: str, version: int, code: str, model_url: str) -> Pa
     meta = {"version": version, "model_url": model_url}
     (version_dir / "meta.json").write_text(json.dumps(meta))
 
+    # Update project timestamp
+    _touch_project(project_id)
+
     return version_dir
 
 
@@ -84,3 +125,56 @@ def get_version(project_id: str, version: int) -> dict:
     if code_path.exists():
         meta["code"] = code_path.read_text()
     return meta
+
+
+def list_projects() -> list[dict]:
+    """List all projects with summary info."""
+    storage = settings.STORAGE_DIR
+    if not storage.exists():
+        return []
+
+    projects = []
+    for d in storage.iterdir():
+        if not d.is_dir():
+            continue
+        meta = _read_project_meta(d.name)
+        if not meta:
+            continue
+        # Count versions
+        version_count = len([
+            v for v in d.iterdir()
+            if v.is_dir() and v.name.startswith("v")
+        ])
+        meta["version_count"] = version_count
+        projects.append(meta)
+
+    projects.sort(key=lambda p: p.get("updated_at", ""), reverse=True)
+    return projects
+
+
+def get_project(project_id: str) -> dict:
+    """Get full project details including version list."""
+    meta = _read_project_meta(project_id)
+    if not meta:
+        raise FileNotFoundError(f"Project {project_id} not found")
+    meta["versions"] = list_versions(project_id)
+    return meta
+
+
+def rename_project(project_id: str, name: str) -> dict:
+    """Rename a project."""
+    meta = _read_project_meta(project_id)
+    if not meta:
+        raise FileNotFoundError(f"Project {project_id} not found")
+    meta["name"] = name
+    meta["updated_at"] = datetime.now(timezone.utc).isoformat()
+    _write_project_meta(project_id, meta)
+    return meta
+
+
+def delete_project(project_id: str) -> None:
+    """Delete a project and all its files."""
+    project_dir = settings.STORAGE_DIR / project_id
+    if not project_dir.exists():
+        raise FileNotFoundError(f"Project {project_id} not found")
+    shutil.rmtree(project_dir)

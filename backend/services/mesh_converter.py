@@ -23,13 +23,22 @@ import Mesh
 try:
     shape = Part.read(r"{brep_path}")
 
-    # Tessellate using MeshPart for better quality
+    # Tessellate each solid separately to handle Compounds (assemblies)
+    solids = shape.Solids if shape.Solids else [shape]
     mesh_data = MeshPart.meshFromShape(
-        Shape=shape,
+        Shape=solids[0],
         LinearDeflection=0.01,
         AngularDeflection=0.1,
         Relative=False
     )
+    for solid in solids[1:]:
+        extra = MeshPart.meshFromShape(
+            Shape=solid,
+            LinearDeflection=0.01,
+            AngularDeflection=0.1,
+            Relative=False
+        )
+        mesh_data.addMesh(extra)
     mesh_data.write(r"{stl_path}")
     print("MESH_EXPORT_OK")
 except Exception as e:

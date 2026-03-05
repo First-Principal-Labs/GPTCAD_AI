@@ -23,7 +23,7 @@ if not _icon:
             break
 
 
-class ChatCADWorkbench:
+class ChatCADWorkbench(FreeCADGui.Workbench):
     """CHATCAD Workbench — AI-powered CAD from natural language."""
 
     MenuText = "CHATCAD"
@@ -54,4 +54,4 @@ class ChatCADWorkbench:
 
 
 ChatCADWorkbench.Icon = _icon
-FreeCADGui.addWorkbench(ChatCADWorkbench())
+FreeCADGui.addWorkbench(ChatCADWorkbench)

@@ -60,3 +60,21 @@ export interface ChatMessage {
   version?: number;
   timestamp: number;
 }
+
+export interface ProjectSummary {
+  id: string;
+  name: string;
+  created_at: string;
+  updated_at: string;
+  version_count: number;
+}
+
+export interface ProjectDetail {
+  id: string;
+  name: string;
+  created_at: string;
+  updated_at: string;
+  versions: { version: number; model_url: string; code?: string }[];
+}
+
+export type ExportFormat = 'step' | 'stl' | 'obj' | 'glb' | 'py';

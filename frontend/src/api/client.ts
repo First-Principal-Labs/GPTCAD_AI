@@ -4,6 +4,8 @@ import type {
   IterateRequest, IterateResponse,
   ManualRequest, ManualResponse,
   CodeRunRequest, CodeRunResponse,
+  ProjectSummary, ProjectDetail,
+  ExportFormat,
 } from '../types';
 
 const api = axios.create({
@@ -28,4 +30,34 @@ export async function manualOperation(req: ManualRequest): Promise<ManualRespons
 export async function runCode(req: CodeRunRequest): Promise<CodeRunResponse> {
   const { data } = await api.post<CodeRunResponse>('/code/run', req);
   return data;
+}
+
+// Project management
+export async function listProjects(): Promise<ProjectSummary[]> {
+  const { data } = await api.get<ProjectSummary[]>('/projects');
+  return data;
+}
+
+export async function getProject(projectId: string): Promise<ProjectDetail> {
+  const { data } = await api.get<ProjectDetail>(`/projects/${projectId}`);
+  return data;
+}
+
+export async function createProject(name?: string): Promise<ProjectSummary> {
+  const { data } = await api.post<ProjectSummary>('/projects', { name });
+  return data;
+}
+
+export async function renameProject(projectId: string, name: string): Promise<ProjectSummary> {
+  const { data } = await api.patch<ProjectSummary>(`/projects/${projectId}`, { name });
+  return data;
+}
+
+export async function deleteProject(projectId: string): Promise<void> {
+  await api.delete(`/projects/${projectId}`);
+}
+
+// Export
+export function getExportUrl(projectId: string, format: ExportFormat): string {
+  return `/api/export/${projectId}?format=${format}`;
 }

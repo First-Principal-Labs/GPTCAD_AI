@@ -135,12 +135,14 @@ export default function BabylonViewport() {
     cadMaterial.metallic = 0.15;
     cadMaterial.roughness = 0.55;
     cadMaterial.environmentIntensity = 0.3;
+    cadMaterial.backFaceCulling = false;
 
     const studioPBR = new PBRMaterial('studio', scene);
     studioPBR.albedoColor = hexToColor3('#b0bec5');
     studioPBR.metallic = 0.6;
     studioPBR.roughness = 0.35;
     studioPBR.environmentIntensity = 0.8;
+    studioPBR.backFaceCulling = false;
 
     const wireframeMaterial = new StandardMaterial('wireframe', scene);
     wireframeMaterial.diffuseColor = hexToColor3('#6366f1');

@@ -72,9 +72,11 @@ except Exception as e:
     mesh = trimesh.load(str(stl_path), process=False)
 
     # Manual cleanup (everything process() does EXCEPT fix_normals)
-    mesh.remove_degenerate_faces()
+    # Remove degenerate (zero-area) faces
+    nondegenerate = trimesh.triangles.area(mesh.triangles) > trimesh.constants.tol.merge
+    mesh.update_faces(nondegenerate)
     mesh.merge_vertices()
-    mesh.remove_duplicate_faces()
+    mesh.update_faces(mesh.unique_faces()[1])
     mesh.remove_unreferenced_vertices()
 
     mesh.export(str(output_path), file_type="glb")

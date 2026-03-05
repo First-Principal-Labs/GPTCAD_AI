@@ -8,6 +8,7 @@ import InfiniteGrid from './InfiniteGrid';
 import ModelRenderer from './ModelRenderer';
 import ViewCube from './ViewCube';
 import RenderModeToolbar from './RenderModeToolbar';
+import ManualTools from './ManualTools';
 import { useAppStore } from '../../stores/appStore';
 
 function LoadingFallback() {
@@ -48,6 +49,7 @@ export default function Viewport() {
   return (
     <div className="relative w-full h-full">
       <RenderModeToolbar />
+      <ManualTools />
 
       <Canvas
         shadows

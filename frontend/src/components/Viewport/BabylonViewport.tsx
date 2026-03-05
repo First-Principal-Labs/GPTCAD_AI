@@ -16,6 +16,7 @@ import {
   DefaultRenderingPipeline,
   AbstractMesh,
   Mesh,
+  DynamicTexture,
 } from '@babylonjs/core';
 import '@babylonjs/loaders/glTF';
 import { useAppStore } from '../../stores/appStore';
@@ -27,6 +28,102 @@ const STUDIO_BG = Color4.FromHexString('#13131fFF');
 
 function hexToColor3(hex: string): Color3 {
   return Color3.FromHexString(hex);
+}
+
+function createAxisGizmo(canvas: HTMLCanvasElement, mainCamera: ArcRotateCamera) {
+  const engine = new Engine(canvas, true, { antialias: true, alpha: true });
+  const scene = new Scene(engine);
+  scene.clearColor = new Color4(0, 0, 0, 0);
+  scene.autoClear = true;
+
+  const camera = new ArcRotateCamera('gizmoCam', 0, 0, 4, Vector3.Zero(), scene);
+  camera.mode = ArcRotateCamera.ORTHOGRAPHIC_CAMERA;
+  const size = 1.6;
+  camera.orthoLeft = -size;
+  camera.orthoRight = size;
+  camera.orthoTop = size;
+  camera.orthoBottom = -size;
+
+  const light = new HemisphericLight('gizmoLight', new Vector3(0, 1, 0), scene);
+  light.intensity = 1.0;
+
+  const axisLen = 0.9;
+  const sphereR = 0.18;
+  const negSphereR = 0.1;
+
+  const axes = [
+    { label: 'X', dir: new Vector3(1, 0, 0), color: '#ef4444', negColor: '#7f1d1d' },
+    { label: 'Y', dir: new Vector3(0, 1, 0), color: '#22c55e', negColor: '#14532d' },
+    { label: 'Z', dir: new Vector3(0, 0, 1), color: '#3b82f6', negColor: '#1e3a5f' },
+  ];
+
+  axes.forEach(({ label, dir, color, negColor }) => {
+    // Axis line
+    const line = MeshBuilder.CreateTube(`axis_${label}`, {
+      path: [Vector3.Zero(), dir.scale(axisLen)],
+      radius: 0.03,
+      tessellation: 8,
+    }, scene);
+    const lineMat = new StandardMaterial(`lineMat_${label}`, scene);
+    lineMat.diffuseColor = Color3.FromHexString(color);
+    lineMat.emissiveColor = Color3.FromHexString(color).scale(0.4);
+    line.material = lineMat;
+
+    // Positive sphere with label
+    const sphere = MeshBuilder.CreateSphere(`sphere_${label}`, { diameter: sphereR * 2, segments: 16 }, scene);
+    sphere.position = dir.scale(axisLen + sphereR + 0.05);
+    const sphereMat = new StandardMaterial(`sphereMat_${label}`, scene);
+    sphereMat.diffuseColor = Color3.FromHexString(color);
+    sphereMat.emissiveColor = Color3.FromHexString(color).scale(0.3);
+
+    // Dynamic texture for label
+    const tex = new DynamicTexture(`tex_${label}`, { width: 64, height: 64 }, scene, false);
+    tex.hasAlpha = true;
+    const ctx = tex.getContext();
+    ctx.clearRect(0, 0, 64, 64);
+    ctx.font = 'bold 40px Arial';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillStyle = 'white';
+    ctx.fillText(label, 32, 34);
+    tex.update();
+    sphereMat.diffuseTexture = tex;
+    sphere.material = sphereMat;
+
+    // Negative sphere (small, dark)
+    const negSphere = MeshBuilder.CreateSphere(`negSphere_${label}`, { diameter: negSphereR * 2, segments: 12 }, scene);
+    negSphere.position = dir.scale(-(axisLen * 0.5));
+    const negMat = new StandardMaterial(`negMat_${label}`, scene);
+    negMat.diffuseColor = Color3.FromHexString(negColor);
+    negMat.emissiveColor = Color3.FromHexString(negColor).scale(0.2);
+    negSphere.material = negMat;
+  });
+
+  // Center sphere
+  const center = MeshBuilder.CreateSphere('center', { diameter: 0.14, segments: 12 }, scene);
+  const centerMat = new StandardMaterial('centerMat', scene);
+  centerMat.diffuseColor = Color3.FromHexString('#14532d');
+  centerMat.emissiveColor = Color3.FromHexString('#14532d').scale(0.3);
+  center.material = centerMat;
+
+  // Sync rotation and render
+  engine.runRenderLoop(() => {
+    camera.alpha = mainCamera.alpha;
+    camera.beta = mainCamera.beta;
+    scene.render();
+  });
+
+  const handleResize = () => engine.resize();
+  const resizeObserver = new ResizeObserver(handleResize);
+  resizeObserver.observe(canvas);
+
+  return {
+    dispose: () => {
+      resizeObserver.disconnect();
+      scene.dispose();
+      engine.dispose();
+    },
+  };
 }
 
 interface SceneRefs {
@@ -50,6 +147,8 @@ interface SceneRefs {
 
 export default function BabylonViewport() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const gizmoCanvasRef = useRef<HTMLCanvasElement>(null);
+  const gizmoRef = useRef<{ dispose: () => void } | null>(null);
   const sceneRef = useRef<SceneRefs | null>(null);
   const modelUrl = useAppStore((s) => s.modelUrl);
   const renderMode = useAppStore((s) => s.renderMode);
@@ -193,7 +292,14 @@ export default function BabylonViewport() {
       xrayMaterial,
     };
 
+    // Initialize axis gizmo
+    if (gizmoCanvasRef.current) {
+      gizmoRef.current = createAxisGizmo(gizmoCanvasRef.current, camera);
+    }
+
     return () => {
+      gizmoRef.current?.dispose();
+      gizmoRef.current = null;
       resizeObserver.disconnect();
       scene.dispose();
       engine.dispose();
@@ -387,6 +493,13 @@ export default function BabylonViewport() {
       <RenderModeToolbar />
       <ManualTools />
       <canvas ref={canvasRef} className="w-full h-full outline-none" style={{ background: '#1a1a24' }} />
+      <canvas
+        ref={gizmoCanvasRef}
+        width={128}
+        height={128}
+        className="absolute outline-none pointer-events-none"
+        style={{ top: 8, right: 8, width: 128, height: 128 }}
+      />
     </div>
   );
 }

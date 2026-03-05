@@ -3,6 +3,7 @@ import { Triangle, Hexagon, Box, Layers } from 'lucide-react';
 
 export default function StatusBar() {
   const isGenerating = useAppStore((s) => s.isGenerating);
+  const generationStatus = useAppStore((s) => s.generationStatus);
   const error = useAppStore((s) => s.error);
   const modelInfo = useAppStore((s) => s.modelInfo);
   const currentVersion = useAppStore((s) => s.currentVersion);
@@ -16,7 +17,7 @@ export default function StatusBar() {
           {isGenerating ? (
             <>
               <div className="w-2 h-2 rounded-full bg-warning animate-pulse" />
-              <span className="text-warning">Generating...</span>
+              <span className="text-warning">{generationStatus || 'Generating...'}</span>
             </>
           ) : error ? (
             <>

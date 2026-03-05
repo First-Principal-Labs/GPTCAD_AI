@@ -37,6 +37,11 @@ interface AppState {
   // UI state
   isGenerating: boolean;
   setGenerating: (v: boolean) => void;
+  generationStatus: string;
+  setGenerationStatus: (s: string) => void;
+  streamingContent: string;
+  appendStreamingContent: (s: string) => void;
+  clearStreamingContent: () => void;
   error: string | null;
   setError: (e: string | null) => void;
 
@@ -72,6 +77,11 @@ export const useAppStore = create<AppState>((set) => ({
 
   isGenerating: false,
   setGenerating: (v) => set({ isGenerating: v }),
+  generationStatus: '',
+  setGenerationStatus: (s) => set({ generationStatus: s }),
+  streamingContent: '',
+  appendStreamingContent: (s) => set((state) => ({ streamingContent: state.streamingContent + s })),
+  clearStreamingContent: () => set({ streamingContent: '' }),
   error: null,
   setError: (e) => set({ error: e }),
 

@@ -1,10 +1,13 @@
 import { useRef, useEffect } from 'react';
 import { useAppStore } from '../../stores/appStore';
-import { Bot, User, RotateCcw } from 'lucide-react';
+import { Bot, User, RotateCcw, Code2 } from 'lucide-react';
 
 export default function ChatHistory() {
   const messages = useAppStore((s) => s.messages);
   const currentVersion = useAppStore((s) => s.currentVersion);
+  const isGenerating = useAppStore((s) => s.isGenerating);
+  const streamingContent = useAppStore((s) => s.streamingContent);
+  const generationStatus = useAppStore((s) => s.generationStatus);
   const setModelUrl = useAppStore((s) => s.setModelUrl);
   const setCode = useAppStore((s) => s.setCode);
   const setCurrentVersion = useAppStore((s) => s.setCurrentVersion);
@@ -12,7 +15,7 @@ export default function ChatHistory() {
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' });
-  }, [messages]);
+  }, [messages, streamingContent]);
 
   const handleRestore = (msg: typeof messages[0]) => {
     if (msg.model_url && msg.code && msg.version) {
@@ -81,6 +84,34 @@ export default function ChatHistory() {
           </div>
         </div>
       ))}
+
+      {/* Streaming indicator */}
+      {isGenerating && (
+        <div className="flex gap-2">
+          <div className="w-6 h-6 rounded-md flex items-center justify-center shrink-0 mt-0.5 bg-bg-elevated">
+            <Bot size={12} className="text-text-secondary animate-pulse" />
+          </div>
+          <div className="flex-1 min-w-0">
+            {generationStatus && (
+              <div className="text-[10px] text-accent font-medium mb-1 flex items-center gap-1">
+                <div className="w-1.5 h-1.5 rounded-full bg-accent animate-pulse" />
+                {generationStatus}
+              </div>
+            )}
+            {streamingContent && (
+              <div className="bg-bg-elevated rounded-md p-2 max-h-32 overflow-y-auto">
+                <div className="flex items-center gap-1 mb-1">
+                  <Code2 size={10} className="text-text-muted" />
+                  <span className="text-[10px] text-text-muted">Generating code...</span>
+                </div>
+                <pre className="text-[10px] text-text-secondary font-mono whitespace-pre-wrap break-words leading-relaxed">
+                  {streamingContent.slice(-500)}
+                </pre>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

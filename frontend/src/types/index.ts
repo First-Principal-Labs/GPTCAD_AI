@@ -24,6 +24,33 @@ export interface IterateResponse {
   version: number;
 }
 
+export interface ManualRequest {
+  operation: string;
+  category: 'primitive' | 'boolean' | 'transform';
+  params: Record<string, number | string>;
+  project_id?: string;
+  existing_code?: string;
+}
+
+export interface ManualResponse {
+  project_id: string;
+  model_url: string;
+  code: string;
+  version: number;
+}
+
+export interface CodeRunRequest {
+  code: string;
+  project_id?: string;
+}
+
+export interface CodeRunResponse {
+  project_id: string;
+  model_url: string;
+  code: string;
+  version: number;
+}
+
 export interface ChatMessage {
   id: string;
   role: 'user' | 'assistant';

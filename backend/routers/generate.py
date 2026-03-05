@@ -4,7 +4,7 @@ from pydantic import BaseModel
 from backend.services.llm import generate_freecad_code
 from backend.services.freecad_runner import execute_freecad_script
 from backend.services.mesh_converter import convert_brep_to_glb
-from backend.services.project_manager import create_project
+from backend.services.project_manager import create_project, save_version
 
 router = APIRouter(prefix="/api", tags=["generate"])
 
@@ -18,6 +18,7 @@ class GenerateResponse(BaseModel):
     project_id: str
     model_url: str
     code: str
+    version: int
 
 
 @router.post("/generate", response_model=GenerateResponse)
@@ -37,13 +38,16 @@ async def generate(req: GenerateRequest):
         glb_path = project_dir / "model.glb"
         await convert_brep_to_glb(brep_path, glb_path)
 
-        # 5. Save the generated code
+        # 5. Save as version 1 and current code
+        model_url = f"/storage/{project_id}/model.glb"
+        save_version(project_id, 1, code, model_url)
         (project_dir / "code.py").write_text(code)
 
         return GenerateResponse(
             project_id=project_id,
-            model_url=f"/storage/{project_id}/model.glb",
+            model_url=model_url,
             code=code,
+            version=1,
         )
 
     except RuntimeError as e:

@@ -16,9 +16,13 @@ def _load_prompt(name: str) -> str:
     return (_PROMPTS_DIR / name).read_text()
 
 
-async def generate_freecad_code(user_prompt: str, history: list[dict] | None = None) -> str:
+async def generate_freecad_code(
+    user_prompt: str,
+    history: list[dict] | None = None,
+    system_prompt_name: str = "system_prompt.txt",
+) -> str:
     """Send a user prompt to the LLM and return FreeCAD Python code."""
-    system = _load_prompt("system_prompt.txt")
+    system = _load_prompt(system_prompt_name)
     messages: list[dict] = [{"role": "system", "content": system}]
 
     if history:

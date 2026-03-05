@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
 from backend.config import settings
-from backend.routers import generate
+from backend.routers import generate, iterate
 
 app = FastAPI(title="GPTCAD", version="0.1.0")
 
@@ -23,6 +23,7 @@ app.mount("/storage", StaticFiles(directory=str(settings.STORAGE_DIR)), name="st
 
 
 app.include_router(generate.router)
+app.include_router(iterate.router)
 
 
 @app.get("/api/health")

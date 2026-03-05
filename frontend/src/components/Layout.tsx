@@ -2,9 +2,11 @@ import { Code2, MessageSquare, PanelLeftOpen, PanelRightOpen } from 'lucide-reac
 import TopBar from './Toolbar/TopBar';
 import StatusBar from './Toolbar/StatusBar';
 import Viewport from './Viewport/Viewport';
+import BabylonViewport from './Viewport/BabylonViewport';
 import CodePanel from './CodePanel/CodePanel';
 import PromptPanel from './PromptPanel/PromptPanel';
 import { useResizable } from '../hooks/useResizable';
+import { useAppStore } from '../stores/appStore';
 
 function ResizeHandle({ onMouseDown, onDoubleClick }: {
   onMouseDown: (e: React.MouseEvent) => void;
@@ -51,6 +53,7 @@ function CollapsedBar({ icon: Icon, label, onClick, side }: {
 export default function Layout() {
   const left = useResizable(320, 200, 600, 'left');
   const right = useResizable(360, 240, 600, 'right');
+  const renderEngine = useAppStore((s) => s.renderEngine);
 
   return (
     <div className="flex flex-col h-screen w-screen bg-bg-primary">
@@ -74,7 +77,7 @@ export default function Layout() {
 
         {/* Viewport (Center) */}
         <div className="flex-1 relative bg-bg-primary min-w-0">
-          <Viewport />
+          {renderEngine === 'babylonjs' ? <BabylonViewport /> : <Viewport />}
         </div>
 
         {/* Prompt Panel (Right) */}

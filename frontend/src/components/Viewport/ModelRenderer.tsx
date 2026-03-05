@@ -138,7 +138,7 @@ export default function ModelRenderer({ url }: ModelRendererProps) {
               <Edges
                 threshold={15}
                 color={edgeColor}
-                lineWidth={renderMode === 'shaded' ? 0.4 : 0.6}
+                lineWidth={renderMode === 'shaded' ? 0.8 : 1.0}
               />
             )}
           </mesh>

@@ -28,8 +28,8 @@ try:
     try:
         mesh_data = MeshPart.meshFromShape(
             Shape=shape,
-            LinearDeflection=0.1,
-            AngularDeflection=0.5,
+            LinearDeflection=0.01,
+            AngularDeflection=0.1,
             Relative=False
         )
         mesh_data.write(r"{output_path}")
@@ -46,8 +46,8 @@ try:
     try:
         mesh_data = MeshPart.meshFromShape(
             Shape=shape,
-            LinearDeflection=0.1,
-            AngularDeflection=0.5,
+            LinearDeflection=0.01,
+            AngularDeflection=0.1,
             Relative=False
         )
         mesh_data.write(r"{output_path}")

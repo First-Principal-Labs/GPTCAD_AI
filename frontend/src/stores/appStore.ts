@@ -12,6 +12,7 @@ interface AppState {
 
   // Code
   code: string;
+  previousCode: string;
   setCode: (code: string) => void;
 
   // Version
@@ -49,7 +50,8 @@ export const useAppStore = create<AppState>((set) => ({
   setModelUrl: (url) => set({ modelUrl: url }),
 
   code: '',
-  setCode: (code) => set({ code }),
+  previousCode: '',
+  setCode: (code) => set((s) => ({ previousCode: s.code, code })),
 
   currentVersion: 0,
   setCurrentVersion: (v) => set({ currentVersion: v }),
@@ -74,6 +76,7 @@ export const useAppStore = create<AppState>((set) => ({
       projectId: null,
       modelUrl: null,
       code: '',
+      previousCode: '',
       currentVersion: 0,
       messages: [],
       modelInfo: null,

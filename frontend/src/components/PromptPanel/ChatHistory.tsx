@@ -1,14 +1,26 @@
 import { useRef, useEffect } from 'react';
 import { useAppStore } from '../../stores/appStore';
-import { Bot, User } from 'lucide-react';
+import { Bot, User, RotateCcw } from 'lucide-react';
 
 export default function ChatHistory() {
   const messages = useAppStore((s) => s.messages);
+  const currentVersion = useAppStore((s) => s.currentVersion);
+  const setModelUrl = useAppStore((s) => s.setModelUrl);
+  const setCode = useAppStore((s) => s.setCode);
+  const setCurrentVersion = useAppStore((s) => s.setCurrentVersion);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' });
   }, [messages]);
+
+  const handleRestore = (msg: typeof messages[0]) => {
+    if (msg.model_url && msg.code && msg.version) {
+      setModelUrl(msg.model_url);
+      setCode(msg.code);
+      setCurrentVersion(msg.version);
+    }
+  };
 
   if (messages.length === 0) {
     return (
@@ -44,9 +56,26 @@ export default function ChatHistory() {
               {msg.content}
             </p>
             {msg.role === 'assistant' && msg.model_url && (
-              <div className="mt-1.5 text-xs text-success flex items-center gap-1">
-                <div className="w-1.5 h-1.5 rounded-full bg-success" />
-                Model generated
+              <div className="mt-1.5 flex items-center gap-2">
+                <div className="text-xs text-success flex items-center gap-1">
+                  <div className="w-1.5 h-1.5 rounded-full bg-success" />
+                  Model generated
+                </div>
+                {msg.version && (
+                  <span className="text-[10px] px-1.5 py-0.5 rounded bg-bg-elevated text-text-muted font-mono">
+                    v{msg.version}
+                  </span>
+                )}
+                {msg.version && msg.version !== currentVersion && (
+                  <button
+                    onClick={() => handleRestore(msg)}
+                    className="text-[10px] px-1.5 py-0.5 rounded bg-accent/10 text-accent hover:bg-accent/20 transition-colors flex items-center gap-0.5"
+                    title="Restore this version"
+                  >
+                    <RotateCcw size={9} />
+                    Restore
+                  </button>
+                )}
               </div>
             )}
           </div>

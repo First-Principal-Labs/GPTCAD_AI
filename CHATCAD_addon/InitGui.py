@@ -3,15 +3,20 @@
 import os
 import FreeCADGui
 
-# __file__ is not always defined when FreeCAD exec()s this script,
-# so derive the addon path from the module search path instead.
-_addon_dir = os.path.dirname(os.path.abspath(__file__)) if "__file__" in dir() else ""
-if not _addon_dir:
-    # Fallback: scan sys.path for our directory
-    import sys
-    for p in sys.path:
-        if os.path.isfile(os.path.join(p, "chatcad_panel.py")):
-            _addon_dir = p
+import sys
+
+# __file__ is not defined when FreeCAD exec()s this script.
+# Derive the addon path from sys.path as a reliable fallback.
+try:
+    _addon_dir = os.path.dirname(os.path.abspath(__file__))
+except NameError:
+    _addon_dir = ""
+
+if not _addon_dir or not os.path.isfile(os.path.join(_addon_dir, "chatcad_panel.py")):
+    _addon_dir = ""
+    for _p in sys.path:
+        if os.path.isfile(os.path.join(_p, "chatcad_panel.py")):
+            _addon_dir = _p
             break
 
 _icon_path = os.path.join(_addon_dir, "resources", "icons", "chatcad.svg") if _addon_dir else ""

@@ -1,6 +1,6 @@
 import { Canvas, useThree } from '@react-three/fiber';
 import { OrbitControls, Environment } from '@react-three/drei';
-import { EffectComposer, SSAO, Bloom } from '@react-three/postprocessing';
+import { EffectComposer, SSAO } from '@react-three/postprocessing';
 import { BlendFunction } from 'postprocessing';
 import { Suspense, useEffect, useRef } from 'react';
 import SceneSetup from './SceneSetup';
@@ -37,8 +37,20 @@ function FitViewHandler() {
   return null;
 }
 
+function ToneMappingController() {
+  const { gl } = useThree();
+  const visualStyle = useAppStore((s) => s.visualStyle);
+
+  useEffect(() => {
+    gl.toneMappingExposure = visualStyle === 'cad' ? 0.95 : 1.1;
+  }, [gl, visualStyle]);
+
+  return null;
+}
+
 function PostProcessing() {
   const renderMode = useAppStore((s) => s.renderMode);
+  const visualStyle = useAppStore((s) => s.visualStyle);
 
   // Only apply SSAO in shaded modes
   if (renderMode === 'wireframe') return null;
@@ -48,16 +60,16 @@ function PostProcessing() {
       <SSAO
         blendFunction={BlendFunction.MULTIPLY}
         samples={16}
-        radius={0.1}
-        intensity={15}
-      />
-      <Bloom
-        intensity={0.05}
-        luminanceThreshold={0.9}
-        luminanceSmoothing={0.9}
+        radius={visualStyle === 'cad' ? 0.15 : 0.1}
+        intensity={visualStyle === 'cad' ? 5 : 15}
       />
     </EffectComposer>
   );
+}
+
+function EnvironmentController() {
+  const visualStyle = useAppStore((s) => s.visualStyle);
+  return <Environment preset="studio" environmentIntensity={visualStyle === 'cad' ? 0.2 : 0.4} />;
 }
 
 export default function Viewport() {
@@ -74,13 +86,14 @@ export default function Viewport() {
         gl={{
           antialias: true,
           toneMapping: 3, // ACESFilmicToneMapping
-          toneMappingExposure: 1.1,
+          toneMappingExposure: 0.95,
         }}
-        style={{ background: '#13131f' }}
+        style={{ background: '#1a1a24' }}
       >
         <SceneSetup />
+        <ToneMappingController />
 
-        <Environment preset="studio" environmentIntensity={0.4} />
+        <EnvironmentController />
 
         <InfiniteGrid />
 

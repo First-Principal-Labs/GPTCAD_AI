@@ -1,9 +1,10 @@
 import { useState, useRef } from 'react';
-import { FolderOpen, Plus, Check, Pencil } from 'lucide-react';
+import { FolderOpen, Plus, Check, Pencil, Settings } from 'lucide-react';
 import { useAppStore } from '../../stores/appStore';
 import { renameProject } from '../../api/client';
 import ExportMenu from './ExportMenu';
 import ProjectListModal from './ProjectListModal';
+import SettingsModal from './SettingsModal';
 
 export default function TopBar() {
   const projectId = useAppStore((s) => s.projectId);
@@ -12,6 +13,7 @@ export default function TopBar() {
   const resetProject = useAppStore((s) => s.resetProject);
 
   const [projectsOpen, setProjectsOpen] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
   const [editing, setEditing] = useState(false);
   const [editValue, setEditValue] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
@@ -107,10 +109,20 @@ export default function TopBar() {
 
           {/* Export menu */}
           <ExportMenu />
+
+          {/* Settings */}
+          <button
+            onClick={() => setSettingsOpen(true)}
+            className="p-2 rounded-md hover:bg-bg-elevated text-text-secondary hover:text-text-primary transition-colors"
+            title="Settings"
+          >
+            <Settings size={16} />
+          </button>
         </div>
       </div>
 
       <ProjectListModal open={projectsOpen} onClose={() => setProjectsOpen(false)} />
+      <SettingsModal open={settingsOpen} onClose={() => setSettingsOpen(false)} />
     </>
   );
 }

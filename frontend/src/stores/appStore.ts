@@ -34,6 +34,10 @@ interface AppState {
   renderMode: 'shaded' | 'wireframe' | 'shaded-wireframe' | 'xray';
   setRenderMode: (mode: 'shaded' | 'wireframe' | 'shaded-wireframe' | 'xray') => void;
 
+  // Visual style preset
+  visualStyle: 'cad' | 'studio';
+  setVisualStyle: (style: 'cad' | 'studio') => void;
+
   // UI state
   isGenerating: boolean;
   setGenerating: (v: boolean) => void;
@@ -78,6 +82,9 @@ export const useAppStore = create<AppState>((set) => ({
 
   renderMode: 'shaded',
   setRenderMode: (mode) => set({ renderMode: mode }),
+
+  visualStyle: 'cad',
+  setVisualStyle: (style) => set({ visualStyle: style }),
 
   isGenerating: false,
   setGenerating: (v) => set({ isGenerating: v }),

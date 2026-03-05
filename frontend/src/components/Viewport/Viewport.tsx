@@ -1,8 +1,8 @@
-import { Canvas } from '@react-three/fiber';
+import { Canvas, useThree } from '@react-three/fiber';
 import { OrbitControls, Environment } from '@react-three/drei';
 import { EffectComposer, SSAO, Bloom } from '@react-three/postprocessing';
 import { BlendFunction } from 'postprocessing';
-import { Suspense } from 'react';
+import { Suspense, useEffect, useRef } from 'react';
 import SceneSetup from './SceneSetup';
 import InfiniteGrid from './InfiniteGrid';
 import ModelRenderer from './ModelRenderer';
@@ -18,6 +18,23 @@ function LoadingFallback() {
       <meshStandardMaterial color="#2a2a3e" wireframe />
     </mesh>
   );
+}
+
+function FitViewHandler() {
+  const { camera, scene } = useThree();
+  const fitViewTrigger = useAppStore((s) => s.fitViewTrigger);
+  const prevTrigger = useRef(fitViewTrigger);
+
+  useEffect(() => {
+    if (fitViewTrigger !== prevTrigger.current) {
+      prevTrigger.current = fitViewTrigger;
+      // Reset camera to default position
+      camera.position.set(6, 4, 8);
+      camera.lookAt(0, 0, 0);
+    }
+  }, [fitViewTrigger, camera, scene]);
+
+  return null;
 }
 
 function PostProcessing() {
@@ -82,6 +99,7 @@ export default function Viewport() {
           target={[0, 0, 0]}
         />
 
+        <FitViewHandler />
         <ViewCube />
       </Canvas>
     </div>

@@ -1,5 +1,6 @@
 import { MessageSquare } from 'lucide-react';
 import ChatHistory from './ChatHistory';
+import SuggestionChips from './SuggestionChips';
 import PromptInput from './PromptInput';
 
 export default function PromptPanel() {
@@ -17,6 +18,9 @@ export default function PromptPanel() {
 
       {/* Chat History */}
       <ChatHistory />
+
+      {/* Suggestions */}
+      <SuggestionChips />
 
       {/* Input */}
       <PromptInput />

@@ -45,6 +45,10 @@ interface AppState {
   error: string | null;
   setError: (e: string | null) => void;
 
+  // Camera
+  fitViewTrigger: number;
+  triggerFitView: () => void;
+
   // Reset project
   resetProject: () => void;
 }
@@ -84,6 +88,9 @@ export const useAppStore = create<AppState>((set) => ({
   clearStreamingContent: () => set({ streamingContent: '' }),
   error: null,
   setError: (e) => set({ error: e }),
+
+  fitViewTrigger: 0,
+  triggerFitView: () => set((s) => ({ fitViewTrigger: s.fitViewTrigger + 1 })),
 
   resetProject: () =>
     set({

@@ -7,7 +7,16 @@ interface ModelRendererProps {
   url: string;
 }
 
-const SHADED_MATERIAL = new THREE.MeshStandardMaterial({
+// CAD style: satin matte, easy to read geometry
+const CAD_SHADED = new THREE.MeshStandardMaterial({
+  color: '#8b939b',
+  metalness: 0.15,
+  roughness: 0.55,
+  envMapIntensity: 0.3,
+});
+
+// Studio style: glossy metallic, premium showcase look
+const STUDIO_SHADED = new THREE.MeshStandardMaterial({
   color: '#b0bec5',
   metalness: 0.6,
   roughness: 0.35,
@@ -29,20 +38,21 @@ const XRAY_MATERIAL = new THREE.MeshPhysicalMaterial({
   depthWrite: false,
 });
 
-function getMaterial(mode: string): THREE.Material {
+function getMaterial(mode: string, style: string): THREE.Material {
   switch (mode) {
     case 'wireframe':
       return WIREFRAME_MATERIAL;
     case 'xray':
       return XRAY_MATERIAL;
     default:
-      return SHADED_MATERIAL;
+      return style === 'studio' ? STUDIO_SHADED : CAD_SHADED;
   }
 }
 
 export default function ModelRenderer({ url }: ModelRendererProps) {
   const { scene } = useGLTF(url);
   const renderMode = useAppStore((s) => s.renderMode);
+  const visualStyle = useAppStore((s) => s.visualStyle);
   const setModelInfo = useAppStore((s) => s.setModelInfo);
   const groupRef = useRef<THREE.Group>(null);
 
@@ -103,8 +113,21 @@ export default function ModelRenderer({ url }: ModelRendererProps) {
     };
   }, [meshes]);
 
-  const material = getMaterial(renderMode);
-  const showEdges = renderMode === 'shaded-wireframe' || renderMode === 'xray';
+  const material = getMaterial(renderMode, visualStyle);
+
+  // CAD style: always show edges in shaded mode for readability
+  // Studio style: only show edges in shaded-wireframe and xray modes
+  const showEdges = renderMode === 'wireframe'
+    ? false
+    : visualStyle === 'cad'
+      ? true
+      : renderMode === 'shaded-wireframe' || renderMode === 'xray';
+
+  const edgeColor = renderMode === 'xray'
+    ? '#818cf8'
+    : visualStyle === 'cad'
+      ? '#2a2d32'
+      : '#000000';
 
   return (
     <Center>
@@ -114,8 +137,8 @@ export default function ModelRenderer({ url }: ModelRendererProps) {
             {showEdges && (
               <Edges
                 threshold={15}
-                color={renderMode === 'xray' ? '#818cf8' : '#000000'}
-                lineWidth={0.5}
+                color={edgeColor}
+                lineWidth={renderMode === 'shaded' ? 0.4 : 0.6}
               />
             )}
           </mesh>

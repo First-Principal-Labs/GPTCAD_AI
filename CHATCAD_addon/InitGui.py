@@ -1,25 +1,28 @@
 """FreeCAD GUI initialization for CHATCAD addon."""
 
-import os
+import os, sys
 import FreeCADGui
 
-import sys
 
-# __file__ is not defined when FreeCAD exec()s this script.
-# Derive the addon path from sys.path as a reliable fallback.
-try:
-    _addon_dir = os.path.dirname(os.path.abspath(__file__))
-except NameError:
-    _addon_dir = ""
+def _find_addon_dir():
+    """Find the CHATCAD addon directory reliably."""
+    try:
+        d = os.path.dirname(os.path.abspath(__file__))
+        if os.path.isfile(os.path.join(d, "chatcad_panel.py")):
+            return d
+    except NameError:
+        pass
+    for p in sys.path:
+        if os.path.isfile(os.path.join(p, "chatcad_panel.py")):
+            return p
+    return ""
 
-if not _addon_dir or not os.path.isfile(os.path.join(_addon_dir, "chatcad_panel.py")):
-    _addon_dir = ""
-    for _p in sys.path:
-        if os.path.isfile(os.path.join(_p, "chatcad_panel.py")):
-            _addon_dir = _p
-            break
 
-_icon_path = os.path.join(_addon_dir, "resources", "icons", "chatcad.svg") if _addon_dir else ""
+def _find_icon():
+    d = _find_addon_dir()
+    if d:
+        return os.path.join(d, "resources", "icons", "chatcad.svg")
+    return ""
 
 
 class ChatCADWorkbench:
@@ -27,7 +30,7 @@ class ChatCADWorkbench:
 
     MenuText = "CHATCAD"
     ToolTip = "Generate CAD models from natural language using AI"
-    Icon = _icon_path
+    Icon = _find_icon()
 
     def Initialize(self):
         """Called when the workbench is first activated."""

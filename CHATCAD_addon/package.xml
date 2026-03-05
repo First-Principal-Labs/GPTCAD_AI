@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<package format="1" xmlns="https://wiki.freecad.org/Package_Metadata">
+    <name>CHATCAD</name>
+    <description>AI-powered CAD assistant. Generate FreeCAD models from natural language prompts using any OpenAI-compatible LLM API.</description>
+    <version>1.0.0</version>
+    <date>2025-01-01</date>
+    <maintainer email="info@firstprincipalabs.com">First Principal Labs</maintainer>
+    <license file="LICENSE">MIT</license>
+    <url type="repository">https://github.com/First-Principal-Labs/GPTCAD_AI</url>
+    <icon>resources/icons/chatcad.svg</icon>
+
+    <content>
+        <workbench>
+            <classname>ChatCADWorkbench</classname>
+            <subdirectory>./</subdirectory>
+        </workbench>
+    </content>
+</package>

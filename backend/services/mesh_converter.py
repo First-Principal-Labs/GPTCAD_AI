@@ -5,24 +5,46 @@ from backend.config import settings
 
 
 async def convert_brep_to_glb(brep_path: Path, output_path: Path) -> Path:
-    """Convert a .brep file to .glb using FreeCAD's mesh export.
+    """Convert a .brep file to .glb using FreeCAD's mesh export + trimesh.
 
-    Runs a small FreeCAD script that loads the .brep and exports as mesh.
-    Then converts the mesh to glTF using trimesh.
+    Two-stage pipeline:
+    1. FreeCAD reads .brep shape and exports triangulated .stl
+    2. trimesh converts .stl to .glb (binary glTF)
     """
-    # First export to STL via FreeCAD, then convert STL to GLB via trimesh
     stl_path = output_path.with_suffix(".stl")
 
     convert_script = f'''
+import sys
 import FreeCAD
 import Part
+import MeshPart
 import Mesh
 
-shape = Part.read(r"{brep_path}")
-mesh = Mesh.Mesh()
-# Tessellate with 0.1mm tolerance for good quality
-mesh.addFacets(shape.tessellate(0.1))
-mesh.write(r"{stl_path}")
+try:
+    shape = Part.read(r"{brep_path}")
+
+    # Tessellate using MeshPart for better quality
+    mesh_data = MeshPart.meshFromShape(
+        Shape=shape,
+        LinearDeflection=0.1,
+        AngularDeflection=0.5,
+        Relative=False
+    )
+    mesh_data.write(r"{stl_path}")
+    print("MESH_EXPORT_OK")
+except Exception as e:
+    # Fallback: use basic Mesh tessellation
+    try:
+        shape = Part.read(r"{brep_path}")
+        doc = FreeCAD.newDocument("Convert")
+        obj = doc.addObject("Part::Feature", "Shape")
+        obj.Shape = shape
+        doc.recompute()
+        Mesh.export([obj], r"{stl_path}")
+        print("MESH_EXPORT_OK_FALLBACK")
+    except Exception as e2:
+        print(f"MESH_EXPORT_FAILED: {{e2}}", file=sys.stderr)
+        sys.exit(1)
 '''
 
     script_path = brep_path.parent / "convert.py"
@@ -38,9 +60,8 @@ mesh.write(r"{stl_path}")
     stdout, stderr = await asyncio.wait_for(process.communicate(), timeout=30)
 
     if not stl_path.exists():
-        # Fallback: try trimesh directly if it can read .brep
         raise RuntimeError(
-            f"Mesh conversion failed.\n{stderr.decode().strip()}"
+            f"Mesh conversion failed.\nstdout: {stdout.decode().strip()}\nstderr: {stderr.decode().strip()}"
         )
 
     # Convert STL to GLB using trimesh
@@ -48,7 +69,7 @@ mesh.write(r"{stl_path}")
     mesh = trimesh.load(str(stl_path))
     mesh.export(str(output_path), file_type="glb")
 
-    # Cleanup intermediate STL
+    # Cleanup intermediate files
     stl_path.unlink(missing_ok=True)
     script_path.unlink(missing_ok=True)
 

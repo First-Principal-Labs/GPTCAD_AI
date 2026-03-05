@@ -1,4 +1,3 @@
-import { useThree } from '@react-three/fiber';
 import { GizmoHelper, GizmoViewport } from '@react-three/drei';
 
 export default function ViewCube() {

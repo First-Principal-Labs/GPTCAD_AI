@@ -1,5 +1,6 @@
 import TopBar from './Toolbar/TopBar';
 import StatusBar from './Toolbar/StatusBar';
+import Viewport from './Viewport/Viewport';
 import { useResizable } from '../hooks/useResizable';
 
 function ResizeHandle({ onMouseDown }: { onMouseDown: (e: React.MouseEvent) => void }) {
@@ -37,9 +38,7 @@ export default function Layout() {
 
         {/* Viewport (Center) */}
         <div className="flex-1 relative bg-bg-primary min-w-0">
-          <div className="absolute inset-0 flex items-center justify-center text-text-muted text-sm">
-            3D Viewport
-          </div>
+          <Viewport />
         </div>
 
         <ResizeHandle onMouseDown={right.onMouseDown} />

@@ -4,7 +4,9 @@ import type { ChatMessage } from '../types';
 interface AppState {
   // Project
   projectId: string | null;
+  projectName: string;
   setProjectId: (id: string) => void;
+  setProjectName: (name: string) => void;
 
   // Model
   modelUrl: string | null;
@@ -44,7 +46,9 @@ interface AppState {
 
 export const useAppStore = create<AppState>((set) => ({
   projectId: null,
+  projectName: 'Untitled Project',
   setProjectId: (id) => set({ projectId: id }),
+  setProjectName: (name) => set({ projectName: name }),
 
   modelUrl: null,
   setModelUrl: (url) => set({ modelUrl: url }),
@@ -74,6 +78,7 @@ export const useAppStore = create<AppState>((set) => ({
   resetProject: () =>
     set({
       projectId: null,
+      projectName: 'Untitled Project',
       modelUrl: null,
       code: '',
       previousCode: '',

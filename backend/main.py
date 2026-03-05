@@ -3,6 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
 from backend.config import settings
+from backend.routers import generate
 
 app = FastAPI(title="GPTCAD", version="0.1.0")
 
@@ -19,6 +20,9 @@ settings.STORAGE_DIR.mkdir(parents=True, exist_ok=True)
 
 # Serve generated model files
 app.mount("/storage", StaticFiles(directory=str(settings.STORAGE_DIR)), name="storage")
+
+
+app.include_router(generate.router)
 
 
 @app.get("/api/health")

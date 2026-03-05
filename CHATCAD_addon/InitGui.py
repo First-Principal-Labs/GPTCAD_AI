@@ -4,25 +4,23 @@ import os, sys
 import FreeCADGui
 
 
-def _find_addon_dir():
-    """Find the CHATCAD addon directory reliably."""
-    try:
-        d = os.path.dirname(os.path.abspath(__file__))
-        if os.path.isfile(os.path.join(d, "chatcad_panel.py")):
-            return d
-    except NameError:
-        pass
-    for p in sys.path:
-        if os.path.isfile(os.path.join(p, "chatcad_panel.py")):
-            return p
-    return ""
-
-
-def _find_icon():
-    d = _find_addon_dir()
-    if d:
-        return os.path.join(d, "resources", "icons", "chatcad.svg")
-    return ""
+# --- Resolve icon path inline (no helper functions) ---
+# FreeCAD exec()s this file with separate globals/locals dicts. Functions
+# defined here get __globals__ bound to the globals dict, but their names
+# live in locals — so one function calling another fails. Inline code at
+# the top level of exec() can access locals normally.
+_icon = ""
+try:
+    _d = os.path.dirname(os.path.abspath(__file__))
+    if os.path.isfile(os.path.join(_d, "chatcad_panel.py")):
+        _icon = os.path.join(_d, "resources", "icons", "chatcad.svg")
+except NameError:
+    pass
+if not _icon:
+    for _p in sys.path:
+        if os.path.isfile(os.path.join(_p, "chatcad_panel.py")):
+            _icon = os.path.join(_p, "resources", "icons", "chatcad.svg")
+            break
 
 
 class ChatCADWorkbench:
@@ -55,7 +53,5 @@ class ChatCADWorkbench:
         return "Gui::PythonWorkbench"
 
 
-# Set Icon AFTER class definition — inside class bodies, Python only searches
-# the class namespace + globals, skipping exec() locals where our functions live.
-ChatCADWorkbench.Icon = _find_icon()
+ChatCADWorkbench.Icon = _icon
 FreeCADGui.addWorkbench(ChatCADWorkbench())

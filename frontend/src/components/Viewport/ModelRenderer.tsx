@@ -13,6 +13,7 @@ const CAD_SHADED = new THREE.MeshStandardMaterial({
   metalness: 0.15,
   roughness: 0.55,
   envMapIntensity: 0.3,
+  side: THREE.DoubleSide,
 });
 
 // Studio style: glossy metallic, premium showcase look
@@ -21,6 +22,7 @@ const STUDIO_SHADED = new THREE.MeshStandardMaterial({
   metalness: 0.6,
   roughness: 0.35,
   envMapIntensity: 0.8,
+  side: THREE.DoubleSide,
 });
 
 const WIREFRAME_MATERIAL = new THREE.MeshStandardMaterial({

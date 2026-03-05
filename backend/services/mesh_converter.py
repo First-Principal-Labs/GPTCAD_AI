@@ -66,11 +66,16 @@ except Exception as e:
 
     # Convert STL to GLB using trimesh
     import trimesh
-    mesh = trimesh.load(str(stl_path))
+    # process=False prevents trimesh from calling fix_normals() which
+    # flips inner-surface face winding on hollow/boolean shapes,
+    # making cavities invisible in the viewer
+    mesh = trimesh.load(str(stl_path), process=False)
 
-    # Merge duplicate vertices so GLB gets smooth vertex normals
-    # instead of flat per-face normals from STL triangle soup
+    # Manual cleanup (everything process() does EXCEPT fix_normals)
+    mesh.remove_degenerate_faces()
     mesh.merge_vertices()
+    mesh.remove_duplicate_faces()
+    mesh.remove_unreferenced_vertices()
 
     mesh.export(str(output_path), file_type="glb")
 

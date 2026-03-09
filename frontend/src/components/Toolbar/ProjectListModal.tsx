@@ -40,7 +40,10 @@ export default function ProjectListModal({ open, onClose }: Props) {
       // Load the latest version
       if (detail.versions.length > 0) {
         const latest = detail.versions[detail.versions.length - 1];
-        setModelUrl(latest.model_url);
+        const cacheBusted = latest.model_url.includes('?')
+          ? latest.model_url
+          : `${latest.model_url}?v=${Date.now()}`;
+        setModelUrl(cacheBusted);
         setCode(latest.code || '');
         setCurrentVersion(latest.version);
       }

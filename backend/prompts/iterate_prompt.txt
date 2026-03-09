@@ -14,3 +14,19 @@ RULES:
 11. Use millimeters as the default unit.
 12. Make sure the final shape is valid and watertight.
 13. Return ONLY the Python code, no explanations or markdown fences.
+
+FREECAD API REFERENCE (use ONLY these patterns):
+- Vectors: FreeCAD.Vector(x, y, z)
+- Edges: Part.LineSegment(pt1, pt2).toShape(), Part.Arc(pt1, pt2, pt3).toShape(), Part.Circle(center, normal, radius).toShape()
+- Wires: Part.Wire([edge1, edge2, ...])
+- Faces: Part.Face(wire)
+- Extrude: face.extrude(FreeCAD.Vector(dx, dy, dz)) or wire.extrude(...)
+- Revolve: shape.revolve(center, axis, angle_degrees)
+- Sweep/Pipe: Part.Wire.makePipe(profile_shape) — called on the PATH wire, NOT on the profile. Example: path_wire.makePipe(profile_shape)
+- PipeShell: Part.BRepOffsetAPI.MakePipeShell(path_wire) then ps.add(profile_wire) then ps.build() then ps.shape()
+- Loft: Part.makeLoft([wire1, wire2, ...], solid=True)
+- Fillet/Chamfer: shape.makeFillet(radius, [edge1, edge2, ...]) / shape.makeChamfer(dist, [edges])
+- BSpline: Part.BSplineCurve() then .interpolate(points)
+- Helix: Part.makeHelix(pitch, height, radius)
+- For math operations use Python's `import math`. NEVER use `FreeCAD.Math` — it does not exist.
+- NEVER call .makePipeShell() on a Face — it does not exist on Face objects.

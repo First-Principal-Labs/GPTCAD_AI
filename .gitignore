@@ -18,6 +18,7 @@ build/
 # Storage (runtime data)
 backend/storage/*
 !backend/storage/.gitkeep
+storage/
 
 # IDE
 .vscode/

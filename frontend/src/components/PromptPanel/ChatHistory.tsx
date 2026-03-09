@@ -19,7 +19,8 @@ export default function ChatHistory() {
 
   const handleRestore = (msg: typeof messages[0]) => {
     if (msg.model_url && msg.code && msg.version) {
-      setModelUrl(msg.model_url);
+      const url = msg.model_url.split('?')[0];
+      setModelUrl(`${url}?v=${Date.now()}`);
       setCode(msg.code);
       setCurrentVersion(msg.version);
     }

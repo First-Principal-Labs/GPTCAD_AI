@@ -51,8 +51,8 @@ async def generate_freecad_code(
     response = await _client.chat.completions.create(
         model=settings.OPENAI_MODEL,
         messages=messages,
-        temperature=0.2,
-        max_tokens=4096,
+        #temperature=0.2,
+        #max_tokens=4096,
     )
 
     return _strip_fences(response.choices[0].message.content.strip())
@@ -69,8 +69,8 @@ async def generate_freecad_code_stream(
     stream = await _client.chat.completions.create(
         model=settings.OPENAI_MODEL,
         messages=messages,
-        temperature=0.2,
-        max_tokens=4096,
+        #temperature=0.2,
+        #max_tokens=4096,
         stream=True,
     )
 

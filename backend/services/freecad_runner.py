@@ -14,7 +14,7 @@ async def execute_freecad_script(code: str, project_dir: Path) -> Path:
     output_path = project_dir / "model.brep"
 
     # Prepend OUTPUT_PATH variable to the user code
-    full_script = f'OUTPUT_PATH = r"{output_path}"\n\n{code}'
+    full_script = f'OUTPUT_PATH = r"{output_path}"\nimport math\n\n{code}'
 
     script_path = project_dir / "script.py"
     script_path.write_text(full_script)

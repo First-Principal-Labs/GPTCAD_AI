@@ -1,3 +1,5 @@
+import time
+
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
@@ -68,7 +70,7 @@ async def iterate(req: IterateRequest):
 
         return IterateResponse(
             project_id=project_id,
-            model_url=model_url,
+            model_url=f"{model_url}?v={int(time.time())}",
             code=code,
             version=version,
         )

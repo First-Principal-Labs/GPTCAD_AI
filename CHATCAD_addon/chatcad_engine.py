@@ -1,6 +1,7 @@
 """LLM communication and FreeCAD code execution engine for CHATCAD addon."""
 
 import json
+import math
 import traceback
 import urllib.request
 import urllib.error
@@ -13,7 +14,7 @@ import chatcad_config as cfg
 SYSTEM_PROMPT = """You are a FreeCAD Python code generator. You write Python scripts that run inside FreeCAD.
 
 RULES:
-1. Always start with: import FreeCAD, Part
+1. Always start with: import FreeCAD, Part, math
 2. Create a new document: doc = FreeCAD.newDocument("CHATCAD")
 3. Use the Part workbench for solid modeling (Part.makeBox, Part.makeCylinder, Part.makeSphere, Part.makeCone, Part.makeTorus)
 4. For complex shapes, use boolean operations: .fuse(), .cut(), .common()
@@ -29,7 +30,24 @@ RULES:
 11. Use millimeters as the default unit.
 12. Make sure the shape is valid and watertight.
 13. Return ONLY the Python code, no explanations or markdown fences.
-14. Do NOT include any Part.export() or OUTPUT_PATH lines — the host will handle export."""
+14. Do NOT include any Part.export() or OUTPUT_PATH lines — the host will handle export.
+15. For math operations (sin, cos, pi, sqrt, etc.) use Python's `import math` module. NEVER use `FreeCAD.Math` — it does not exist.
+
+FREECAD API REFERENCE (use ONLY these patterns):
+- Vectors: FreeCAD.Vector(x, y, z)
+- Edges: Part.LineSegment(pt1, pt2).toShape(), Part.Arc(pt1, pt2, pt3).toShape(), Part.Circle(center, normal, radius).toShape()
+- Wires: Part.Wire([edge1, edge2, ...])
+- Faces: Part.Face(wire)
+- Extrude: face.extrude(FreeCAD.Vector(dx, dy, dz)) or wire.extrude(...)
+- Revolve: shape.revolve(center, axis, angle_degrees)
+- Sweep/Pipe: Part.Wire.makePipe(profile_shape) — called on the PATH wire, NOT on the profile. Example: path_wire.makePipe(profile_shape)
+- PipeShell: Part.BRepOffsetAPI.MakePipeShell(path_wire) then ps.add(profile_wire) then ps.build() then ps.shape()
+- Loft: Part.makeLoft([wire1, wire2, ...], solid=True)
+- Fillet/Chamfer: shape.makeFillet(radius, [edge1, edge2, ...]) / shape.makeChamfer(dist, [edges])
+- BSpline: Part.BSplineCurve() then .interpolate(points)
+- Helix: Part.makeHelix(pitch, height, radius)
+- NEVER call .makePipeShell() on a Face — it does not exist on Face objects.
+- NEVER use FreeCAD.Math — it does not exist. Use Python's math module."""
 
 ITERATE_PROMPT = """You are a FreeCAD Python code modifier. You receive existing FreeCAD Python code and a user instruction to modify it.
 
@@ -46,7 +64,23 @@ RULES:
 10. Use millimeters as the default unit.
 11. Make sure the final shape is valid and watertight.
 12. Return ONLY the Python code, no explanations or markdown fences.
-13. Do NOT include any Part.export() or OUTPUT_PATH lines — the host will handle export."""
+13. Do NOT include any Part.export() or OUTPUT_PATH lines — the host will handle export.
+
+FREECAD API REFERENCE (use ONLY these patterns):
+- Vectors: FreeCAD.Vector(x, y, z)
+- Edges: Part.LineSegment(pt1, pt2).toShape(), Part.Arc(pt1, pt2, pt3).toShape(), Part.Circle(center, normal, radius).toShape()
+- Wires: Part.Wire([edge1, edge2, ...])
+- Faces: Part.Face(wire)
+- Extrude: face.extrude(FreeCAD.Vector(dx, dy, dz)) or wire.extrude(...)
+- Revolve: shape.revolve(center, axis, angle_degrees)
+- Sweep/Pipe: Part.Wire.makePipe(profile_shape) — called on the PATH wire, NOT on the profile. Example: path_wire.makePipe(profile_shape)
+- PipeShell: Part.BRepOffsetAPI.MakePipeShell(path_wire) then ps.add(profile_wire) then ps.build() then ps.shape()
+- Loft: Part.makeLoft([wire1, wire2, ...], solid=True)
+- Fillet/Chamfer: shape.makeFillet(radius, [edge1, edge2, ...]) / shape.makeChamfer(dist, [edges])
+- BSpline: Part.BSplineCurve() then .interpolate(points)
+- Helix: Part.makeHelix(pitch, height, radius)
+- For math operations use Python's `import math`. NEVER use `FreeCAD.Math` — it does not exist.
+- NEVER call .makePipeShell() on a Face — it does not exist on Face objects."""
 
 
 def _strip_fences(code: str) -> str:
@@ -94,8 +128,8 @@ def call_llm(prompt: str, existing_code: str = "") -> str:
     payload = json.dumps({
         "model": model,
         "messages": messages,
-        "temperature": temperature,
-        "max_tokens": 4096,
+        #"temperature": temperature,
+        #"max_tokens": 4096,
     }).encode("utf-8")
 
     url = f"{base_url}/chat/completions"
@@ -133,7 +167,7 @@ def execute_code(code: str) -> str:
 
     # Execute the generated code
     try:
-        exec(code, {"__builtins__": __builtins__})
+        exec(code, {"__builtins__": __builtins__, "math": math})
     except Exception:
         return f"Execution failed:\n{traceback.format_exc()}"
 

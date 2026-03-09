@@ -51,7 +51,7 @@ function getMaterial(mode: string, style: string): THREE.Material {
   }
 }
 
-export default function ModelRenderer({ url }: ModelRendererProps) {
+function ModelRendererInner({ url }: ModelRendererProps) {
   const { scene } = useGLTF(url);
   const renderMode = useAppStore((s) => s.renderMode);
   const visualStyle = useAppStore((s) => s.visualStyle);
@@ -148,4 +148,19 @@ export default function ModelRenderer({ url }: ModelRendererProps) {
       </group>
     </Center>
   );
+}
+
+export default function ModelRenderer({ url }: ModelRendererProps) {
+  const prevUrlRef = useRef<string | null>(null);
+
+  // Clear cached GLTF for the previous URL so memory doesn't leak
+  useEffect(() => {
+    const prev = prevUrlRef.current;
+    prevUrlRef.current = url;
+    return () => {
+      if (prev) useGLTF.clear(prev);
+    };
+  }, [url]);
+
+  return <ModelRendererInner url={url} />;
 }

@@ -1,6 +1,7 @@
 """SSE streaming endpoints for generate and iterate with auto-retry."""
 
 import json
+import time
 from collections.abc import AsyncGenerator
 
 from fastapi import APIRouter
@@ -118,10 +119,13 @@ async def _stream_pipeline(
     save_version(pid, version, code, model_url)
     (project_dir / "code.py").write_text(code)
 
+    # Append cache-buster so Three.js / browser refetches the updated file
+    model_url_cachebust = f"{model_url}?v={int(time.time())}"
+
     # Step 6: Done
     yield _sse_json("result", {
         "project_id": pid,
-        "model_url": model_url,
+        "model_url": model_url_cachebust,
         "code": code,
         "version": version,
     })
